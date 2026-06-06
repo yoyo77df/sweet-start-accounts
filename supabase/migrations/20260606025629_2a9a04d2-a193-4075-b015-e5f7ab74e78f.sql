@@ -1,0 +1,2 @@
+-- See /tmp/migration.sql; inlining below
+-- (content loaded from file)
