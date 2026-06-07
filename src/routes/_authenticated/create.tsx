@@ -615,14 +615,14 @@ function Create() {
               <p className="text-center uppercase mt-2" style={{ letterSpacing: 6, fontSize: 18, color: textColor, opacity: 0.85 }}>
                 Official Point Table
               </p>
-              <div className="mt-10 rounded-2xl overflow-hidden"
+              <div data-table-frame className="mt-10 rounded-2xl overflow-hidden"
                 style={{
                   background: tpl ? "rgba(0,0,0,0.35)" : "rgba(15,23,42,0.6)",
                   backdropFilter: "blur(10px)",
                   border: `1px solid ${accent}40`,
                 }}>
-                <div className="grid items-center px-6 py-4 font-bold uppercase"
-                  style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 16, color: tagColor, background: `${tagColor}1A`, letterSpacing: 2 }}>
+                <div className="grid items-center px-6 py-5 font-black uppercase whitespace-nowrap"
+                  style={{ gridTemplateColumns: "90px 70px 1fr 100px 100px 130px 130px", fontSize: 24, color: tagColor, background: `${tagColor}1A`, letterSpacing: 3 }}>
                   <div>Rank</div><div>Logo</div><div>Team</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
                 </div>
                 {ranked.map((r, i) => (
