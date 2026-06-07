@@ -627,7 +627,7 @@ function Create() {
                 </div>
                 {ranked.map((r, i) => (
                   <div key={r.idx} className="grid items-center px-6 py-3 whitespace-nowrap"
-                    style={{ gridTemplateColumns: "90px 70px 1fr 100px 100px 130px 130px", fontSize: 20, borderTop: "1px solid rgba(255,255,255,0.08)", background: i === 0 ? `${tagColor}14` : "transparent" }}>
+                    style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 20, borderTop: "1px solid rgba(255,255,255,0.08)", background: i === 0 ? `${tagColor}14` : "transparent" }}>
                     <div className="font-black" style={{ fontSize: 24, color: i === 0 ? tagColor : textColor, textShadow: i === 0 ? `0 0 14px ${tagColor}99` : "none" }}>#{i + 1}</div>
                     <div className="flex items-center">
                       {r.logo ? (
