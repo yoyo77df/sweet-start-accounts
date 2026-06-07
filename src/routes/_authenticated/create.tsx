@@ -352,17 +352,16 @@ function Create() {
       return toast.error("You need credits to download. Buy a pack from the Credits page.");
     }
 
-    // Render PNG — try canvas first, fall back to html-to-image, then a minimal canvas.
-    // This block NEVER throws to the user; we always end up with a data URL.
+    // Render PNG from the actual preview DOM so download === preview exactly.
     let pngDataUrl = "";
     try {
-      pngDataUrl = await drawFallbackPng(resolution);
-    } catch (canvasErr) {
-      console.warn("Canvas renderer failed, trying html-to-image:", canvasErr);
+      pngDataUrl = await renderPng(resolution);
+    } catch (htiErr) {
+      console.warn("html-to-image failed, falling back to canvas:", htiErr);
       try {
-        pngDataUrl = await renderPng(resolution);
-      } catch (htiErr) {
-        console.warn("html-to-image failed, using minimal canvas:", htiErr);
+        pngDataUrl = await drawFallbackPng(resolution);
+      } catch (canvasErr) {
+        console.warn("Canvas renderer failed, using minimal canvas:", canvasErr);
         const c = document.createElement("canvas");
         c.width = CANVAS_W; c.height = CANVAS_H;
         const cx = c.getContext("2d");
