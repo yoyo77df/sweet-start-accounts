@@ -50,7 +50,7 @@ function Create() {
   const [tournamentLogo, setTournamentLogo] = useState<string | null>(null);
   const [tournamentLogoSize, setTournamentLogoSize] = useState(140);
   const [rows, setRows] = useState<Row[]>(
-    Array.from({ length: 12 }, (_, i) => ({ name: `Team ${i + 1}`, kills: 0, pos: 0, booyah: 0, logo: null })),
+    Array.from({ length: 12 }, (_, i) => ({ name: `Team Name ${i + 1}`, kills: 0, pos: 0, booyah: 0, logo: null })),
   );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -278,7 +278,7 @@ function Create() {
     ctx.textAlign = "left";
     ctx.fillText("RANK", tableX + 24, tableY + 46);
     ctx.fillText("LOGO", tableX + 110, tableY + 46);
-    ctx.fillText("TEAM", tableX + 188, tableY + 46);
+    ctx.fillText("     TEAM NAME", tableX + 188, tableY + 46);
     ctx.textAlign = "center";
     ctx.fillText("KILLS", tableX + tableW - 360, tableY + 46);
     ctx.fillText("POS", tableX + tableW - 260, tableY + 46);
