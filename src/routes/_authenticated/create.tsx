@@ -28,6 +28,19 @@ type Template = { id: string; name: string; image_url: string; accent_color: str
 const CANVAS_W = 1080;
 const CANVAS_H = 1350;
 const NONE_BG = "radial-gradient(ellipse at top, #0c1c3e 0%, #050813 70%)";
+const TEMPLATE_SIGNED_URL_SECONDS = 60 * 60 * 24 * 7;
+
+function templateStoragePath(value: string): string | null {
+  if (!value || value.startsWith("data:")) return null;
+  if (!value.startsWith("http")) return value.replace(/^\/+/, "").replace(/^templates\//, "");
+  try {
+    const path = new URL(value).pathname;
+    const match = path.match(/\/storage\/v1\/object\/(?:public|sign)\/templates\/(.+)$/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -49,6 +62,7 @@ function Create() {
   const [tagColor, setTagColor] = useState("#f59e0b");
   const [tournamentLogo, setTournamentLogo] = useState<string | null>(null);
   const [tournamentLogoSize, setTournamentLogoSize] = useState(140);
+  const [tournamentLogoMode, setTournamentLogoMode] = useState<"behind" | "above">("behind");
   const [rows, setRows] = useState<Row[]>(
     Array.from({ length: 12 }, (_, i) => ({ name: `Team ${i + 1}`, kills: 0, pos: 0, booyah: 0, logo: null })),
   );
@@ -60,9 +74,19 @@ function Create() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let mounted = true;
     supabase.from("templates").select("id,name,image_url,accent_color,premium")
       .eq("active", true).order("created_at", { ascending: false })
-      .then(({ data }) => setTemplates((data ?? []) as Template[]));
+      .then(async ({ data }) => {
+        const signed = await Promise.all(((data ?? []) as Template[]).map(async (t) => {
+          const path = templateStoragePath(t.image_url);
+          if (!path) return t;
+          const { data: url } = await supabase.storage.from("templates").createSignedUrl(path, TEMPLATE_SIGNED_URL_SECONDS);
+          return { ...t, image_url: url?.signedUrl ?? t.image_url, storage_path: path };
+        }));
+        if (mounted) setTemplates(signed);
+      });
+    return () => { mounted = false; };
   }, []);
 
   const loadUserThumbs = async () => {
@@ -239,7 +263,18 @@ function Create() {
     if (bgImg) ctx.drawImage(bgImg, 0, 0, CANVAS_W, CANVAS_H);
 
     let y = 112;
-    if (tournamentLogo) {
+    if (tournamentLogo && tournamentLogoMode === "behind") {
+      const logo = await loadImageSafe(tournamentLogo);
+      if (logo) {
+        const h = tournamentLogoSize;
+        const w = Math.min(CANVAS_W - 160, h * (logo.naturalWidth / Math.max(1, logo.naturalHeight)));
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(logo, (CANVAS_W - w) / 2, y - Math.round(h * 0.62), w, h);
+        ctx.restore();
+      }
+    }
+    if (tournamentLogo && tournamentLogoMode === "above") {
       const logo = await loadImageSafe(tournamentLogo);
       if (logo) {
         const h = tournamentLogoSize;
@@ -277,9 +312,9 @@ function Create() {
     ctx.font = "800 16px Arial, sans-serif";
     ctx.textAlign = "left";
     ctx.fillText("RANK", tableX + 24, tableY + 46);
-    ctx.fillText("LOGO", tableX + 110, tableY + 46);
-    ctx.fillText("TEAM", tableX + 188, tableY + 46);
     ctx.textAlign = "center";
+    ctx.fillText("LOGO", tableX + 122, tableY + 46);
+    ctx.fillText("TEAM", tableX + 312, tableY + 46);
     ctx.fillText("KILLS", tableX + tableW - 360, tableY + 46);
     ctx.fillText("POS", tableX + tableW - 260, tableY + 46);
     ctx.fillText("BOOYAH", tableX + tableW - 160, tableY + 46);
@@ -310,13 +345,13 @@ function Create() {
 
       if (row.logo) {
         const logo = await loadImageSafe(row.logo);
-        if (logo) ctx.drawImage(logo, tableX + 104, rowY + 8, 48, 48);
+        if (logo) ctx.drawImage(logo, tableX + 95, rowY + 5, 54, 54);
       }
 
       ctx.fillStyle = textColor;
       ctx.font = "700 20px Arial, sans-serif";
-      ctx.fillText(fitText(row.name, 320), tableX + 188, rowY + 32);
       ctx.textAlign = "center";
+      ctx.fillText(fitText(row.name, 320), tableX + 312, rowY + 32);
       ctx.fillText(String(row.kills), tableX + tableW - 360, rowY + 32);
       ctx.fillText(String(row.pos), tableX + tableW - 260, rowY + 32);
       ctx.fillStyle = "#fb923c";
@@ -449,14 +484,20 @@ function Create() {
             )}
           </div>
           {tournamentLogo && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-10">Size</span>
-              <input
-                type="range" min={60} max={400} value={tournamentLogoSize}
-                onChange={(e) => setTournamentLogoSize(Number(e.target.value))}
-                className="flex-1 accent-primary"
-              />
-              <span className="text-xs text-muted-foreground w-10 text-right">{tournamentLogoSize}px</span>
+            <div className="mt-2 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" size="sm" variant={tournamentLogoMode === "above" ? "default" : "outline"} onClick={() => setTournamentLogoMode("above")}>Text er upore</Button>
+                <Button type="button" size="sm" variant={tournamentLogoMode === "behind" ? "default" : "outline"} onClick={() => setTournamentLogoMode("behind")}>Text er pichone</Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10">Size</span>
+                <input
+                  type="range" min={60} max={520} value={tournamentLogoSize}
+                  onChange={(e) => setTournamentLogoSize(Number(e.target.value))}
+                  className="flex-1 accent-primary"
+                />
+                <span className="text-xs text-muted-foreground w-10 text-right">{tournamentLogoSize}px</span>
+              </div>
             </div>
           )}
         </div>
@@ -598,7 +639,7 @@ function Create() {
         tpl={tpl}
         textColor={textColor}
       >
-        {tournamentLogo && (
+        {tournamentLogo && tournamentLogoMode === "above" && (
           <div className="flex justify-center mb-4">
             <img
               src={tournamentLogo}
@@ -608,10 +649,21 @@ function Create() {
             />
           </div>
         )}
-        <h2 className="text-center font-black tracking-tight"
-          style={{ color: accent, textShadow: `0 0 24px ${accent}80`, fontSize: 64 }}>
-          {tournament}
-        </h2>
+        <div className="relative text-center">
+          {tournamentLogo && tournamentLogoMode === "behind" && (
+            <img
+              src={tournamentLogo}
+              alt="Tournament logo"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 object-contain"
+              style={{ height: tournamentLogoSize, width: "auto", maxWidth: "85%", opacity: 0.5 }}
+              crossOrigin="anonymous"
+            />
+          )}
+          <h2 className="relative font-black tracking-tight"
+            style={{ color: accent, textShadow: `0 0 24px ${accent}80`, fontSize: 64 }}>
+            {tournament}
+          </h2>
+        </div>
               <p className="text-center uppercase mt-2" style={{ letterSpacing: 6, fontSize: 18, color: textColor, opacity: 0.85 }}>
                 Official Point Table
               </p>
@@ -622,21 +674,21 @@ function Create() {
                   border: `1px solid ${accent}40`,
                 }}>
                 <div className="grid items-center px-6 py-4 font-bold uppercase whitespace-nowrap"
-                  style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 16, color: tagColor, background: `${tagColor}1A`, letterSpacing: 2 }}>
-                  <div>Rank</div><div>Logo</div><div>Team</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
+                  style={{ gridTemplateColumns: "80px 84px 1fr 90px 90px 110px 110px", fontSize: 16, color: tagColor, background: `${tagColor}1A`, letterSpacing: 2 }}>
+                  <div>Rank</div><div className="text-center">Logo</div><div className="text-center">Team</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
                 </div>
                 {ranked.map((r, i) => (
                   <div key={r.idx} className="grid items-center px-6 py-3 whitespace-nowrap"
-                    style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 20, borderTop: "1px solid rgba(255,255,255,0.08)", background: i === 0 ? `${tagColor}14` : "transparent" }}>
+                    style={{ gridTemplateColumns: "80px 84px 1fr 90px 90px 110px 110px", fontSize: 20, borderTop: "1px solid rgba(255,255,255,0.08)", background: i === 0 ? `${tagColor}14` : "transparent" }}>
                     <div className="font-black" style={{ fontSize: 24, color: i === 0 ? tagColor : textColor, textShadow: i === 0 ? `0 0 14px ${tagColor}99` : "none" }}>#{i + 1}</div>
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center">
                       {r.logo ? (
-                        <img src={r.logo} alt="" style={{ height: 48, width: 48, objectFit: "cover", borderRadius: 8 }} />
+                        <img src={r.logo} alt="" style={{ height: 56, width: 56, objectFit: "contain", borderRadius: 8 }} />
                       ) : (
-                        <div style={{ height: 48, width: 48 }} />
+                        <div style={{ height: 56, width: 56 }} />
                       )}
                     </div>
-                    <div className="font-semibold">{r.name}</div>
+                    <div className="font-semibold text-center">{r.name}</div>
                     <div className="text-center">{r.kills}</div>
                     <div className="text-center">{r.pos}</div>
                     <div className="text-center font-bold" style={{ color: "#fb923c" }}>{r.booyah}</div>
