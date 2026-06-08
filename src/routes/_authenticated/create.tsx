@@ -287,7 +287,7 @@ function Create() {
     ctx.fillText("TOTAL", tableX + tableW - 24, tableY + 46);
 
     const fitText = (value: string, max: number) => {
-      let text = value || "Team NAME";
+      let text = value || "     TEAM NAME";
       while (ctx.measureText(text).width > max && text.length > 4) text = `${text.slice(0, -4)}...`;
       return text;
     };
@@ -554,7 +554,7 @@ function Create() {
                   </>
                 ) : canUpload ? <ImagePlus className="h-4 w-4 text-muted-foreground" /> : <Lock className="h-3 w-3 text-muted-foreground" />}
               </label>
-              <Input value={r.name} onChange={(e) => update(i, { name: e.target.value })} placeholder={`Team NAME ${i + 1}`} />
+              <Input value={r.name} onChange={(e) => update(i, { name: e.target.value })} placeholder={`     TEAM NAME ${i + 1}`} />
               <Input type="number" min={0} value={r.kills} onChange={(e) => update(i, { kills: Number(e.target.value) || 0 })} placeholder="K" title="Kills" />
               <Input type="number" min={0} value={r.pos} onChange={(e) => update(i, { pos: Number(e.target.value) || 0 })} placeholder="P" title="Position points" />
               <Input type="number" min={0} value={r.booyah} onChange={(e) => update(i, { booyah: Number(e.target.value) || 0 })} placeholder="B" title="Booyah" className="text-orange-400" />
@@ -623,7 +623,7 @@ function Create() {
                 }}>
                 <div className="grid items-center px-6 py-4 font-bold uppercase whitespace-nowrap"
                   style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 16, color: tagColor, background: `${tagColor}1A`, letterSpacing: 2 }}>
-                  <div>Rank</div><div>Logo</div><div>Team NAME</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
+                  <div>Rank</div><div>Logo</div><div>     TEAM NAME</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
                 </div>
                 {ranked.map((r, i) => (
                   <div key={r.idx} className="grid items-center px-6 py-3 whitespace-nowrap"
