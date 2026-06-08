@@ -263,7 +263,18 @@ function Create() {
     if (bgImg) ctx.drawImage(bgImg, 0, 0, CANVAS_W, CANVAS_H);
 
     let y = 112;
-    if (tournamentLogo) {
+    if (tournamentLogo && tournamentLogoMode === "behind") {
+      const logo = await loadImageSafe(tournamentLogo);
+      if (logo) {
+        const h = tournamentLogoSize;
+        const w = Math.min(CANVAS_W - 160, h * (logo.naturalWidth / Math.max(1, logo.naturalHeight)));
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(logo, (CANVAS_W - w) / 2, y - Math.round(h * 0.62), w, h);
+        ctx.restore();
+      }
+    }
+    if (tournamentLogo && tournamentLogoMode === "above") {
       const logo = await loadImageSafe(tournamentLogo);
       if (logo) {
         const h = tournamentLogoSize;
@@ -473,14 +484,20 @@ function Create() {
             )}
           </div>
           {tournamentLogo && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-10">Size</span>
-              <input
-                type="range" min={60} max={400} value={tournamentLogoSize}
-                onChange={(e) => setTournamentLogoSize(Number(e.target.value))}
-                className="flex-1 accent-primary"
-              />
-              <span className="text-xs text-muted-foreground w-10 text-right">{tournamentLogoSize}px</span>
+            <div className="mt-2 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" size="sm" variant={tournamentLogoMode === "above" ? "default" : "outline"} onClick={() => setTournamentLogoMode("above")}>Text er upore</Button>
+                <Button type="button" size="sm" variant={tournamentLogoMode === "behind" ? "default" : "outline"} onClick={() => setTournamentLogoMode("behind")}>Text er pichone</Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10">Size</span>
+                <input
+                  type="range" min={60} max={520} value={tournamentLogoSize}
+                  onChange={(e) => setTournamentLogoSize(Number(e.target.value))}
+                  className="flex-1 accent-primary"
+                />
+                <span className="text-xs text-muted-foreground w-10 text-right">{tournamentLogoSize}px</span>
+              </div>
             </div>
           )}
         </div>
