@@ -639,7 +639,7 @@ function Create() {
         tpl={tpl}
         textColor={textColor}
       >
-        {tournamentLogo && (
+        {tournamentLogo && tournamentLogoMode === "above" && (
           <div className="flex justify-center mb-4">
             <img
               src={tournamentLogo}
@@ -649,10 +649,21 @@ function Create() {
             />
           </div>
         )}
-        <h2 className="text-center font-black tracking-tight"
-          style={{ color: accent, textShadow: `0 0 24px ${accent}80`, fontSize: 64 }}>
-          {tournament}
-        </h2>
+        <div className="relative text-center">
+          {tournamentLogo && tournamentLogoMode === "behind" && (
+            <img
+              src={tournamentLogo}
+              alt="Tournament logo"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 object-contain"
+              style={{ height: tournamentLogoSize, width: "auto", maxWidth: "85%", opacity: 0.5 }}
+              crossOrigin="anonymous"
+            />
+          )}
+          <h2 className="relative font-black tracking-tight"
+            style={{ color: accent, textShadow: `0 0 24px ${accent}80`, fontSize: 64 }}>
+            {tournament}
+          </h2>
+        </div>
               <p className="text-center uppercase mt-2" style={{ letterSpacing: 6, fontSize: 18, color: textColor, opacity: 0.85 }}>
                 Official Point Table
               </p>
@@ -663,21 +674,21 @@ function Create() {
                   border: `1px solid ${accent}40`,
                 }}>
                 <div className="grid items-center px-6 py-4 font-bold uppercase whitespace-nowrap"
-                  style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 16, color: tagColor, background: `${tagColor}1A`, letterSpacing: 2 }}>
-                  <div>Rank</div><div>Logo</div><div>Team</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
+                  style={{ gridTemplateColumns: "80px 84px 1fr 90px 90px 110px 110px", fontSize: 16, color: tagColor, background: `${tagColor}1A`, letterSpacing: 2 }}>
+                  <div>Rank</div><div className="text-center">Logo</div><div className="text-center">Team</div><div className="text-center">Kills</div><div className="text-center">Pos</div><div className="text-center" style={{ color: "#fb923c" }}>Booyah</div><div className="text-right">Total</div>
                 </div>
                 {ranked.map((r, i) => (
                   <div key={r.idx} className="grid items-center px-6 py-3 whitespace-nowrap"
-                    style={{ gridTemplateColumns: "80px 64px 1fr 90px 90px 110px 110px", fontSize: 20, borderTop: "1px solid rgba(255,255,255,0.08)", background: i === 0 ? `${tagColor}14` : "transparent" }}>
+                    style={{ gridTemplateColumns: "80px 84px 1fr 90px 90px 110px 110px", fontSize: 20, borderTop: "1px solid rgba(255,255,255,0.08)", background: i === 0 ? `${tagColor}14` : "transparent" }}>
                     <div className="font-black" style={{ fontSize: 24, color: i === 0 ? tagColor : textColor, textShadow: i === 0 ? `0 0 14px ${tagColor}99` : "none" }}>#{i + 1}</div>
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center">
                       {r.logo ? (
-                        <img src={r.logo} alt="" style={{ height: 48, width: 48, objectFit: "cover", borderRadius: 8 }} />
+                        <img src={r.logo} alt="" style={{ height: 56, width: 56, objectFit: "contain", borderRadius: 8 }} />
                       ) : (
-                        <div style={{ height: 48, width: 48 }} />
+                        <div style={{ height: 56, width: 56 }} />
                       )}
                     </div>
-                    <div className="font-semibold">{r.name}</div>
+                    <div className="font-semibold text-center">{r.name}</div>
                     <div className="text-center">{r.kills}</div>
                     <div className="text-center">{r.pos}</div>
                     <div className="text-center font-bold" style={{ color: "#fb923c" }}>{r.booyah}</div>
