@@ -339,7 +339,20 @@ function PackagesTab() {
   );
 }
 
-type Template = { id: string; name: string; image_url: string; active: boolean; premium: boolean; created_at: string; accent_color: string };
+type Template = { id: string; name: string; image_url: string; active: boolean; premium: boolean; created_at: string; accent_color: string; storage_path?: string };
+const TEMPLATE_SIGNED_URL_SECONDS = 60 * 60 * 24 * 7;
+
+function templateStoragePath(value: string): string | null {
+  if (!value || value.startsWith("data:")) return null;
+  if (!value.startsWith("http")) return value.replace(/^\/+/, "").replace(/^templates\//, "");
+  try {
+    const path = new URL(value).pathname;
+    const match = path.match(/\/storage\/v1\/object\/(?:public|sign)\/templates\/(.+)$/);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
 
 function TemplatesTab() {
   const [list, setList] = useState<Template[]>([]);
@@ -367,7 +380,13 @@ function TemplatesTab() {
   const load = async () => {
     const { data, error } = await supabase.from("templates").select("*").order("created_at", { ascending: false });
     if (error) return toast.error(error.message);
-    setList((data ?? []) as Template[]);
+    const signed = await Promise.all(((data ?? []) as Template[]).map(async (t) => {
+      const path = templateStoragePath(t.image_url);
+      if (!path) return t;
+      const { data: url } = await supabase.storage.from("templates").createSignedUrl(path, TEMPLATE_SIGNED_URL_SECONDS);
+      return { ...t, image_url: url?.signedUrl ?? t.image_url, storage_path: path };
+    }));
+    setList(signed);
   };
   useEffect(() => { load(); }, []);
 
@@ -378,8 +397,7 @@ function TemplatesTab() {
       const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")}`;
       const { error: upErr } = await supabase.storage.from("templates").upload(path, file, { upsert: false });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("templates").getPublicUrl(path);
-      const { error: insErr } = await supabase.from("templates").insert({ name, image_url: pub.publicUrl, premium, accent_color: accent });
+      const { error: insErr } = await supabase.from("templates").insert({ name, image_url: path, premium, accent_color: accent });
       if (insErr) throw insErr;
       toast.success("Template uploaded");
       setName(""); setFile(null); setPremium(false); setAccent("#34d399");
@@ -429,9 +447,8 @@ function TemplatesTab() {
       const path = `ai-${Date.now()}.png`;
       const { error: upErr } = await supabase.storage.from("templates").upload(path, blob, { upsert: false, contentType: blob.type || "image/png" });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("templates").getPublicUrl(path);
       const { error: insErr } = await supabase.from("templates").insert({
-        name: aiName, image_url: pub.publicUrl, premium: aiPremium, accent_color: aiAccent,
+        name: aiName, image_url: path, premium: aiPremium, accent_color: aiAccent,
       });
       if (insErr) throw insErr;
       toast.success("AI template saved");
@@ -459,8 +476,7 @@ function TemplatesTab() {
       const path = `gen-${Date.now()}.png`;
       const { error: upErr } = await supabase.storage.from("templates").upload(path, blob, { contentType: blob.type || "image/png" });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("templates").getPublicUrl(path);
-      const { error: insErr } = await supabase.from("templates").insert({ name: genName, image_url: pub.publicUrl, premium: genPremium, accent_color: genAccent });
+      const { error: insErr } = await supabase.from("templates").insert({ name: genName, image_url: path, premium: genPremium, accent_color: genAccent });
       if (insErr) throw insErr;
       toast.success("Saved");
       setGenPreview(null); setGenName(""); setGenPremium(false); setGenAccent("#f59e0b");
@@ -619,8 +635,7 @@ function AiBatchTab() {
       const path = `batch-${Date.now()}-${idx}.png`;
       const { error: upErr } = await supabase.storage.from("templates").upload(path, blob, { contentType: blob.type || "image/png" });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("templates").getPublicUrl(path);
-      const { error: insErr } = await supabase.from("templates").insert({ name: it.name, image_url: pub.publicUrl, premium: it.premium, accent_color: it.accent });
+      const { error: insErr } = await supabase.from("templates").insert({ name: it.name, image_url: path, premium: it.premium, accent_color: it.accent });
       if (insErr) throw insErr;
       setItems((xs) => xs.map((x, i) => i === idx ? { ...x, saved: true } : x));
       toast.success("Saved");
@@ -701,8 +716,7 @@ function NewAiTab() {
       const path = `variant-${Date.now()}-${idx}.png`;
       const { error: upErr } = await supabase.storage.from("templates").upload(path, blob, { contentType: blob.type || "image/png" });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("templates").getPublicUrl(path);
-      const { error: insErr } = await supabase.from("templates").insert({ name: it.name, image_url: pub.publicUrl, premium: it.premium, accent_color: it.accent });
+      const { error: insErr } = await supabase.from("templates").insert({ name: it.name, image_url: path, premium: it.premium, accent_color: it.accent });
       if (insErr) throw insErr;
       setItems((xs) => xs.map((x, i) => i === idx ? { ...x, saved: true } : x));
       toast.success("Saved");
