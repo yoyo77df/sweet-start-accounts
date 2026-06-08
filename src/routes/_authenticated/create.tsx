@@ -312,8 +312,8 @@ function Create() {
     ctx.font = "800 16px Arial, sans-serif";
     ctx.textAlign = "left";
     ctx.fillText("RANK", tableX + 24, tableY + 46);
-    ctx.fillText("LOGO", tableX + 110, tableY + 46);
-    ctx.fillText("TEAM", tableX + 188, tableY + 46);
+    ctx.fillText("LOGO", tableX + 128, tableY + 46);
+    ctx.fillText("TEAM", tableX + 206, tableY + 46);
     ctx.textAlign = "center";
     ctx.fillText("KILLS", tableX + tableW - 360, tableY + 46);
     ctx.fillText("POS", tableX + tableW - 260, tableY + 46);
@@ -345,12 +345,12 @@ function Create() {
 
       if (row.logo) {
         const logo = await loadImageSafe(row.logo);
-        if (logo) ctx.drawImage(logo, tableX + 104, rowY + 8, 48, 48);
+        if (logo) ctx.drawImage(logo, tableX + 101, rowY + 5, 54, 54);
       }
 
       ctx.fillStyle = textColor;
       ctx.font = "700 20px Arial, sans-serif";
-      ctx.fillText(fitText(row.name, 320), tableX + 188, rowY + 32);
+      ctx.fillText(fitText(row.name, 320), tableX + 206, rowY + 32);
       ctx.textAlign = "center";
       ctx.fillText(String(row.kills), tableX + tableW - 360, rowY + 32);
       ctx.fillText(String(row.pos), tableX + tableW - 260, rowY + 32);
